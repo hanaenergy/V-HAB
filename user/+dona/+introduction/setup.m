@@ -19,8 +19,15 @@ classdef setup < simulation.infrastructure
 
         function configureMonitors(this)
 	        %% Logging
-	        oLogger = this.toMonitors.oLogger;
+            oLogger = this.toMonitors.oLogger;
+
 	        oLogger.addValue('Example.toStores.Cabin.toPhases.CabinAir', 'fPressure', 'Pa', 'Total Cabin Pressure');
+            oLogger.addValue('Example.toStores.Cabin.toPhases.CabinAir', 'fTemperature', 'K', 'Cabin Temperature');
+            oLogger.addValue('Example.toStores.Cabin.toPhases.CabinAir', 'this.afPP(this.oMT.tiN2I.CO2)', 'Pa', 'Partial Pressure CO2 Cabin');
+            oLogger.addValue('Example.toStores.Cabin.toPhases.CabinAir', 'rRelHumidity', '-', 'Relative Humidity Cabin');
+
+            oLogger.addValue('Example.toStores.Condensate_Storage.toPhases.Condensate', 'fMass', 'kg', 'Condensate Mass');
+            oLogger.addValue('Example.toStores.CO2_Removal.toPhases.LiOH', 'this.afMass(this.oMT.tiN2I.CO2)', 'kg', 'Absorbed CO2 Mass');
         end
 
         function plot(this)
@@ -43,12 +50,20 @@ classdef setup < simulation.infrastructure
             % Defines the plotter object
             oPlotter = plot@simulation.infrastructure(this);
 
+            coPlot = {};
+            % Define the first row of plots
+            coPlot{1,1} = oPlotter.definePlot({'"Total Cabin Pressure"'}, 		'Total Cabin Pressure');
+            coPlot{1,2} = oPlotter.definePlot({'"Partial Pressure CO2 Cabin"'}, 'Partial Pressure CO2 Cabin');
+            % define the second row of plots
+            coPlot{2,1} = oPlotter.definePlot({'"Cabin Temperature"'}, 			'Cabin Temperature');
+            coPlot{2,2} = oPlotter.definePlot({'"Relative Humidity Cabin"'}, 	'Relative Humidity Cabin');
+            % Define the figure
+            oPlotter.defineFigure(coPlot, 'Cabin Atmosphere Values');
 
-            % Define a single plot
-            oPlot{1} = oPlotter.definePlot({'"Total Cabin Pressure"'},'Total Cabin Pressure');
-            
-            % Define a single figure
-            oPlotter.defineFigure(oPlot,  'Total Cabin Pressure');
+            coPlot2 = {};
+            coPlot2{1,1} = oPlotter.definePlot({'"Condensate Mass"'}, 		'Condensate Mass');
+            coPlot2{2,1} = oPlotter.definePlot({'"Absorbed CO2 Mass"'}, 			'Absorbed CO2 Mass');
+            oPlotter.defineFigure(coPlot2, 'CO2_Removal Values');
             
             oPlotter.plot();
         end
