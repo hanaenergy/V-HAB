@@ -6,6 +6,7 @@ user/+*
 !user/+examples
 !user/+simulations
 !user/+tests
+!user/+dona
 
 # Ignore simulation results, excepct README
 data/*
