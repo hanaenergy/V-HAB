@@ -47,18 +47,63 @@ classdef Example < vsys
             matter.phases.mixture(this.toStores.CO2_Removal, 'LiOH', 'solid', struct('Li', 50), 293, 1e5);
 
 
+
+            matter.procs.exmes.gas(this.toStores.Cabin.toPhases.CabinAir, 'Cabin_to_HX');
+            matter.procs.exmes.gas(this.toStores.Cabin.toPhases.CabinAir, 'Cabin_from_HX');
+            matter.procs.exmes.gas(this.toStores.Cabin.toPhases.CabinAir, 'Cabin_to_CO2_Removal');
+
+            matter.branch(this, 'Cabin.Cabin_to_HX', {}, 'Cabin.Cabin_from_HX', 'Cabin_HX_Loop');
+            matter.branch(this, this.toStores.HX_Coolant.toPhases.Coolant, {}, this.toStores.HX_Coolant.toPhases.Coolant, 'HX_Coolant_Loop');
+            matter.branch(this, 'Cabin.Cabin_to_CO2_Removal', {}, this.toStores.CO2_Removal.toPhases.Air, 'Cabin_to_CO2_Removal');
+            matter.branch(this, this.toStores.CO2_Removal.toPhases.Air, {}, this.toStores.Cabin.toPhases.CabinAir', 'CO2_Removal_to_Cabin');
+            matter.branch(this, this.toStores.O2_Generation.toPhases.Oxygen, {}, this.toStores.Cabin.toPhases.CabinAir, 'O2_Generation_to_Cabin');
+            matter.branch(this, this.toStores.O2_Generation.toPhases.Hydrogen, {}, this.toStores.Vacuum.toPhases.Vacuum, 'Hydrogen_to_Vacuum');
+            matter.branch(this, this.toStores.Water_Supply.toPhases.Water, {}, this.toStores.O2_Generation.toPhases.Water, 'Water_to_O2_Generation');
+
+
         end
        
         function createSolverStructure(this)
             createSolverStructure@vsys(this);
            
+            solver.matter.manual.branch(this.toBranches.Cabin_HX_Loop);
+            this.toBranches.Cabin_HX_Loop.oHandler.setFlowRate(1);
+
+            solver.matter.manual.branch(this.toBranches.HX_Coolant_Loop);
+            this.toBranches.HX_Coolant_Loop.oHandler.setFlowRate(10);
+            
+            solver.matter.manual.branch(this.toBranches.Cabin_to_CO2_Removal);
+            this.toBranches.Cabin_to_CO2_Removal.oHandler.setVolumetricFlowRate(0.01);
+
+            solver.matter.manual.branch(this.toBranches.Water_to_O2_Generation);
+            
+            solver.matter.residual.branch(this.toBranches.O2_Generation_to_Cabin);
+            solver.matter.residual.branch(this.toBranches.Hydrogen_to_Vacuum);
+
+            solver.matter_multibranch.iterative.branch(this.toBranches.CO2_Removal_to_Cabin, 'complex');
+
+            this.setThermalSolvers();
+
         end
     end
    
      methods (Access = protected)
         function exec(this, ~)
             exec@vsys(this);
-           
+            
+            if this.oTimer.iTick ~=0
+	            fPPO2 = this.toStores.Cabin.toPhases.CabinAir.afPP(this.oMT.tiN2I.O2);
+                if fPPO2 < 19500
+                    this.toBranches.Water_to_O2_Generation.oHandler.setFlowRate(1e-4);
+                elseif fPPO2 <= 22000
+                    this.toBranches.Water_to_O2_Generation.oHandler.setFlowRate(3.4e-5);
+                else
+                    this.toBranches.Water_to_O2_Generation.oHandler.setFlowRate(0);
+                end
+
+            
+            end
+            
         end
      end
 end
