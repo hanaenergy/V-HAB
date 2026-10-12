@@ -30,6 +30,8 @@ classdef Example < vsys
             matter.phases.liquid(this.toStores.Condensate_Storage, 'Condensate', struct('H2O', 1), 293, 1e5);
             matter.phases.liquid(this.toStores.HX_Coolant, 'Coolant', struct('H2O', 10), 293, 1e5);
             matter.phases.liquid(this.toStores.O2_Generation, 'Water', struct('H2O', 10), 293, 1e5);
+            dona.introduction.components.O2_Generation_Manip('O2_Generation_Manip', this.toStores.O2_Generation.toPhases.Water);
+
             matter.phases.liquid(this.toStores.Water_Supply, 'Water', struct('H2O', 1000), 293, 1e5);
             matter.phases.liquid(this.toStores.Waste_Storage, 'Liquid_Waste', struct('H2O', 0.1), 293, 1e5);
 
@@ -52,13 +54,25 @@ classdef Example < vsys
             matter.procs.exmes.gas(this.toStores.Cabin.toPhases.CabinAir, 'Cabin_from_HX');
             matter.procs.exmes.gas(this.toStores.Cabin.toPhases.CabinAir, 'Cabin_to_CO2_Removal');
 
-            matter.branch(this, 'Cabin.Cabin_to_HX', {}, 'Cabin.Cabin_from_HX', 'Cabin_HX_Loop');
+            
             matter.branch(this, this.toStores.HX_Coolant.toPhases.Coolant, {}, this.toStores.HX_Coolant.toPhases.Coolant, 'HX_Coolant_Loop');
             matter.branch(this, 'Cabin.Cabin_to_CO2_Removal', {}, this.toStores.CO2_Removal.toPhases.Air, 'Cabin_to_CO2_Removal');
-            matter.branch(this, this.toStores.CO2_Removal.toPhases.Air, {}, this.toStores.Cabin.toPhases.CabinAir', 'CO2_Removal_to_Cabin');
+            matter.branch(this, this.toStores.CO2_Removal.toPhases.Air, {}, this.toStores.Cabin.toPhases.CabinAir, 'CO2_Removal_to_Cabin');
             matter.branch(this, this.toStores.O2_Generation.toPhases.Oxygen, {}, this.toStores.Cabin.toPhases.CabinAir, 'O2_Generation_to_Cabin');
             matter.branch(this, this.toStores.O2_Generation.toPhases.Hydrogen, {}, this.toStores.Vacuum.toPhases.Vacuum, 'Hydrogen_to_Vacuum');
             matter.branch(this, this.toStores.Water_Supply.toPhases.Water, {}, this.toStores.O2_Generation.toPhases.Water, 'Water_to_O2_Generation');
+
+            dona.introduction.components.LiOH_Absorber(this.toStores.CO2_Removal, 'LiOH_P2P', this.toStores.CO2_Removal.toPhases.Air, this.toStores.CO2_Removal.toPhases.LiOH);
+            dona.introduction.components.General_P2P(this.toStores.O2_Generation, 'O2_P2P', this.toStores.O2_Generation.toPhases.Water, this.toStores.O2_Generation.toPhases.Oxygen, 'O2');
+            dona.introduction.components.General_P2P(this.toStores.O2_Generation, 'H2_P2P', this.toStores.O2_Generation.toPhases.Water, this.toStores.O2_Generation.toPhases.Hydrogen, 'H2');
+
+            dona.introduction.components.fan(this, 'HX_Fan', -1e5);
+            fLength     = 1;    % Pipe length in m
+            fDiameter   = 0.01; % Pipe Diameter in m
+            fRoughness  = 1e-5; % Pipe surface roughness in m. If roughness is not provided, a smooth pipe is assumed
+            components.matter.pipe(this, 'Pipe_1', fLength, fDiameter, fRoughness);
+            components.matter.pipe(this, 'Pipe_2', fLength, fDiameter, fRoughness);
+            matter.branch(this, 'Cabin.Cabin_to_HX', {'Pipe_1','HX_Fan','Pipe_2'}, 'Cabin.Cabin_from_HX', 'Cabin_HX_Loop');
 
 
         end
@@ -66,8 +80,7 @@ classdef Example < vsys
         function createSolverStructure(this)
             createSolverStructure@vsys(this);
            
-            solver.matter.manual.branch(this.toBranches.Cabin_HX_Loop);
-            this.toBranches.Cabin_HX_Loop.oHandler.setFlowRate(1);
+            solver.matter.interval.branch(this.toBranches.Cabin_HX_Loop);
 
             solver.matter.manual.branch(this.toBranches.HX_Coolant_Loop);
             this.toBranches.HX_Coolant_Loop.oHandler.setFlowRate(10);
