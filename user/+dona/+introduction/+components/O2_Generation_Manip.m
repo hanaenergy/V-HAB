@@ -1,4 +1,4 @@
-classdef O2_Generation_Manip < matter.manips.substance.stationary 
+classdef O2_Generation_Manip < matter.manips.substance.stationary & event.source
     methods
         function this = O2_Generation_Manip(sName, oPhase)
 			this@matter.manips.substance.stationary(sName, oPhase); 
@@ -24,6 +24,8 @@ classdef O2_Generation_Manip < matter.manips.substance.stationary
             afPartialFlowRates(this.oMT.tiN2I.H2) = fH2Production;
 
             update@matter.manips.substance.stationary(this, afPartialFlowRates);
+
+            this.trigger('OGA_ManipulatorUpdate')
         end
     end
 end
