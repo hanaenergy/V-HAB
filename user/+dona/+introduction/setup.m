@@ -31,7 +31,7 @@ classdef setup < simulation.infrastructure
 
             oLogger.addValue('Example.toBranches.Cabin_to_CO2_Removal', 'fFlowRate', 'kg/s', 'CO2 Removal Inlet Flow Rate');
             oLogger.addValue('Example.toBranches.CO2_Removal_to_Cabin', 'fFlowRate', 'kg/s', 'CO2 Removal Outlet Flow Rate');
-            oLogger.addValue('Example.toBranches.Water_to_O2_Generation', 'fFlowRate', 'kg/s', 'Water to O2 Generation Flow Rate');
+            oLogger.addValue('Example.toChildren.OGA.toBranches.Water_to_O2_Generation', 'fFlowRate', 'kg/s', 'Water to O2 Generation Flow Rate');
         end
 
         function plot(this)
